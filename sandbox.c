@@ -12,14 +12,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "lang.h"
+
 const pid_t SANDBOX_UID = 1450;
 const pid_t SANDBOX_GID = 1450;
-
-unsigned long parse_long(char *str) {
-    unsigned long x = 0;
-    for (char *p = str; *p; p++) x = x * 10 + *p - '0';
-    return x;
-}
 
 pid_t pid;
 long time_limit_to_watch;
@@ -33,9 +29,9 @@ void *watcher_thread(void *arg) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 10 + 1) {
-        fprintf(stderr, "Error: need 10 arguments\n");
-        fprintf(stderr, "Usage: %s program file_stdin file_stdout file_stderr time_limit  memory_limit large_stack output_limit process_limit file_result\n", argv[0]);
+    if (argc != 11 + 1) {
+        fprintf(stderr, "Error: need 11 arguments\n");
+        fprintf(stderr, "Usage: %s lang_id compile file_stdin file_stdout file_stderr time_limit  memory_limit large_stack output_limit process_limit file_result\n", argv[0]);
         return 1;
     }
 
@@ -44,26 +40,56 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *program = argv[1],
-         *file_stdin = argv[2],
-         *file_stdout = argv[3],
-         *file_stderr = argv[4],
-         *file_result = argv[10];
-    long time_limit = parse_long(argv[5]),
-         memory_limit = parse_long(argv[6]),
-         large_stack = parse_long(argv[7]),
-         output_limit = parse_long(argv[8]),
-         process_limit = parse_long(argv[9]);
+    char *file_stdin = argv[3],
+         *file_stdout = argv[4],
+         *file_stderr = argv[5],
+         *file_result = argv[11];
+    long lang_id = strtol(argv[1], NULL, 10),
+         compile = strtol(argv[2], NULL, 10),
+         time_limit = strtol(argv[6], NULL, 10),
+         memory_limit = strtol(argv[7], NULL, 10),
+         large_stack = strtol(argv[8], NULL, 10),
+         output_limit = strtol(argv[9], NULL, 10),
+         process_limit = strtol(argv[10], NULL, 10);
 
     time_limit_to_watch = time_limit + 1000;
+
+    char *program = 0;
+    char **program_argv = 0;
+
+    if(lang_id == 0){ // c11
+        if(compile){
+            program = c_compile_argv[0];
+            program_argv = c_compile_argv;
+        }
+        else {
+            program = c_execution[0];
+            program_argv = c_execution;
+        }
+    }
+    else if(lang_id == 1){  // cpp11
+        if(compile){
+            program = cpp_compile_argv[0];
+            program_argv = cpp_compile_argv;
+        }
+        else {
+            program = cpp_execution[0];
+            program_argv = cpp_execution;
+        }
+    }
+    else if(lang_id == 2){ // python3
+        program = python3_execution[0];
+        program_argv = python3_execution;
+    }
+
 
 #ifdef LOG
     printf("Program: %s\n", program);
     printf("Standard input file: %s\n", file_stdin);
     printf("Standard output file: %s\n", file_stdout);
     printf("Standard error file: %s\n", file_stderr);
-    printf("Time limit (seconds): %lu + %lu\n", time_limit, time_limit_reserve);
-    printf("Memory limit (kilobytes): %lu + %lu\n", memory_limit, memory_limit_reserve);
+    printf("Time limit (seconds): %lu\n", time_limit);
+    printf("Memory limit (kilobytes): %lu\n", memory_limit);
     printf("Output limit (bytes): %lu\n", output_limit);
     printf("Process limit: %lu\n", process_limit);
     printf("Result file: %s\n", file_result);
@@ -124,8 +150,8 @@ int main(int argc, char **argv) {
 
 #ifdef LOG
         printf("memory_usage = %ld\n", usage.ru_maxrss);
-        if (time_limit_exceeded_killed) printf("cpu_usage = %ld\n", time_limit_to_watch * 1000000);
-        else printf("cpu_usage = %ld\n", usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec);
+        if (time_limit_exceeded_killed) printf("cpu_usage = %ld\n", time_limit_to_watch * 1000000 / 1000);
+        else printf("cpu_usage = %ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
 #endif
         if (time_limit_exceeded_killed) fprintf(fresult, "%ld\n", time_limit_to_watch * 1000000 / 1000);
         else fprintf(fresult, "%ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
@@ -213,10 +239,12 @@ int main(int argc, char **argv) {
             dup2(fd, STDERR_FILENO);
             close(fd);
         }
-
-        setegid(SANDBOX_GID);
-        setuid(SANDBOX_UID);        
-        execlp(program, program, NULL);
+        if(!compile){
+            setegid(SANDBOX_GID);
+            setuid(SANDBOX_UID);  
+        }
+              
+        execvp(program, program_argv);
     }
     return 0;
 }
