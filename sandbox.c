@@ -131,7 +131,8 @@ int main(int argc, char **argv) {
             else {
                 fprintf(fresult, "Exited Normally\nWIFEXITED - WEXITSTATUS() = %d\n", WEXITSTATUS(status));
             }
-        } else {
+        } 
+        else {
             // Signaled
             int sig = WTERMSIG(status);
             if (time_limit_exceeded_killed || usage.ru_utime.tv_sec > time_limit || sig == SIGXCPU) {
