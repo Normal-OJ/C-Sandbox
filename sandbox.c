@@ -22,7 +22,7 @@ long time_limit_to_watch;
 bool time_limit_exceeded_killed;
 
 void *watcher_thread(void *arg) {
-    sleep(time_limit_to_watch);
+    usleep(time_limit_to_watch * 1000);
     time_limit_exceeded_killed = true;
     kill(pid, SIGKILL);
     return arg; // Avoid 'parameter set but not used' warning
@@ -151,10 +151,10 @@ int main(int argc, char **argv) {
 
 #ifdef LOG
         printf("memory_usage = %ld\n", usage.ru_maxrss);
-        if (time_limit_exceeded_killed) printf("cpu_usage = %ld\n", time_limit_to_watch * 1000000 / 1000);
+        if (time_limit_exceeded_killed) printf("cpu_usage = %ld\n", time_limit_to_watch);
         else printf("cpu_usage = %ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
 #endif
-        if (time_limit_exceeded_killed) fprintf(fresult, "%ld\n", time_limit_to_watch * 1000000 / 1000);
+        if (time_limit_exceeded_killed) fprintf(fresult, "%ld\n", time_limit_to_watch);
         else fprintf(fresult, "%ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
         fprintf(fresult, "%ld\n", usage.ru_maxrss);
 
