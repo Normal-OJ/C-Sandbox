@@ -13,6 +13,7 @@
 #include <fcntl.h>
 
 #include "lang.h"
+#include "rule.h"
 
 const pid_t SANDBOX_UID = 1450;
 const pid_t SANDBOX_GID = 1450;
@@ -244,7 +245,11 @@ int main(int argc, char **argv) {
             setegid(SANDBOX_GID);
             setuid(SANDBOX_UID);  
         }
-              
+        // load rule
+        if(!compile){
+            if(lang_id == 0 || lang_id == 1)c_cpp_rules(program);
+        }
+
         execvp(program, program_argv);
     }
     return 0;
