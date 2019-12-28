@@ -1,7 +1,6 @@
 #include <unistd.h>
 int main(){
-    // while(1)
-    printf("fork\n");
-    // fork();
+    while(1)
+        fork();
     return 0;
 }
