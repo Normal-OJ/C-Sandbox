@@ -60,3 +60,7 @@ int c_cpp_rules(char *target, bool allow_write_file){
 	seccomp_load(ctx);
     return 0;
 }
+
+int general(char *target){
+    return 0;
+}

@@ -2,6 +2,6 @@
 int main(){
     // while(1)
     printf("fork\n");
-    fork();
+    // fork();
     return 0;
 }
