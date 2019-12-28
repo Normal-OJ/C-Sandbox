@@ -9,3 +9,4 @@ all: sandbox.c
 
 clean:
 	rm -f sandbox
+	rm -f stdin stdout stderr result main

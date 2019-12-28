@@ -1,3 +1,9 @@
 venv
 __pycache__
 .vscode
+sandbox
+main
+stdin
+stdout
+stderr
+result
