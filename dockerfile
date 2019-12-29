@@ -1,12 +1,14 @@
 # for build
 
-FROM alpine
+FROM ubuntu:18.04
 
 MAINTAINER Normal-OJ
 
-# install essential
-RUN apk add --update alpine-sdk
+# update
+RUN apt-get update -y
 
-#install seccomp
-RUN apk add --update libseccomp-dev
+# install seccomp
+RUN apt-get install libseccomp-dev libseccomp2 seccomp -y
 
+# install g++
+RUN apt-get install build-essential -y

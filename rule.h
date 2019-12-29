@@ -12,7 +12,7 @@ int c_cpp_rules(char *target, bool allow_write_file){
     }
     // for execve
     seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(execve), 1, SCMP_A0(SCMP_CMP_EQ , (scmp_datum_t)target));
-    // uname  read_link sysinfo writev lseek clock_gettime
+
     int syscalls_whitelist[] = {SCMP_SYS(read), SCMP_SYS(fstat),
                                 SCMP_SYS(mmap), SCMP_SYS(mprotect),
                                 SCMP_SYS(munmap), SCMP_SYS(uname),
@@ -21,7 +21,7 @@ int c_cpp_rules(char *target, bool allow_write_file){
                                 SCMP_SYS(close), SCMP_SYS(readlink),
                                 SCMP_SYS(sysinfo), SCMP_SYS(write),
                                 SCMP_SYS(writev), SCMP_SYS(lseek),
-                                SCMP_SYS(clock_gettime), SCMP_SYS(fcntl)};
+                                SCMP_SYS(clock_gettime)};
 
     // add rules
     int syscalls_whitelist_length = sizeof(syscalls_whitelist) / sizeof(int);
