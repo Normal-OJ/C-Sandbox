@@ -59,13 +59,21 @@ int c_cpp_rules(char *target, bool allow_write_file){
         }
     }
 
-	seccomp_load(ctx);
+	if (seccomp_load(ctx) != 0) {
+        return LOAD_SECCOMP_FAILED;
+    }
+    seccomp_release(ctx);
     return 0;
 }
 
-int general(char *target){
+int python3_rules(char *target){
+
+    return 0;
+}
+
+int general_rules(char *target){
     scmp_filter_ctx ctx;
-	ctx = seccomp_init(SCMP_ACT_KILL);
+	ctx = seccomp_init(SCMP_ACT_ALLOW);
     if (!ctx) {
         return LOAD_SECCOMP_FAILED;
     }
@@ -73,7 +81,6 @@ int general(char *target){
     if (seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(execve), 1, SCMP_A0(SCMP_CMP_NE , (scmp_datum_t)target)) != 0){
         return LOAD_SECCOMP_FAILED;
     }
-
 
     int syscalls_blacklist[] = {SCMP_SYS(clone),
                                 SCMP_SYS(fork), SCMP_SYS(vfork),

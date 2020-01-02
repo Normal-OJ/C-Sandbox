@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
         // load rule
         if(!compile){
             if(lang_id == 0 || lang_id == 1)c_cpp_rules(program, 0);
-            if(lang_id == 2)general(program);
+            if(lang_id == 2)general_rules(program);
         }
 
         execvp(program, program_argv);
