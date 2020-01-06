@@ -78,9 +78,9 @@ int general_rules(char *target){
         return LOAD_SECCOMP_FAILED;
     }
     // for execve
-    if (seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(execve), 1, SCMP_A0(SCMP_CMP_NE , (scmp_datum_t)target)) != 0){
-        return LOAD_SECCOMP_FAILED;
-    }
+    // if (seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(execve), 1, SCMP_A0(SCMP_CMP_NE , (scmp_datum_t)target)) != 0){
+    //     return LOAD_SECCOMP_FAILED;
+    // }
 
     int syscalls_blacklist[] = {SCMP_SYS(clone),
                                 SCMP_SYS(fork), SCMP_SYS(vfork),
