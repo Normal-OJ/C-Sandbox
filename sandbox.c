@@ -22,21 +22,25 @@ pid_t pid;
 long time_limit_to_watch;
 bool time_limit_exceeded_killed;
 
-void *watcher_thread(void *arg) {
+void *watcher_thread(void *arg)
+{
     usleep(time_limit_to_watch * 1000);
     time_limit_exceeded_killed = true;
     kill(pid, SIGKILL);
     return arg; // Avoid 'parameter set but not used' warning
 }
 
-int main(int argc, char **argv) {
-    if (argc != 11 + 1) {
+int main(int argc, char **argv)
+{
+    if (argc != 11 + 1)
+    {
         fprintf(stderr, "Error: need 11 arguments\n");
         fprintf(stderr, "Usage: %s lang_id compile file_stdin file_stdout file_stderr time_limit  memory_limit large_stack output_limit process_limit file_result\n", argv[0]);
         return 1;
     }
 
-    if (getuid() != 0) {
+    if (getuid() != 0)
+    {
         fprintf(stderr, "Error: need root privileges\n");
         return 1;
     }
@@ -58,31 +62,37 @@ int main(int argc, char **argv) {
     char *program = 0;
     char **program_argv = 0;
 
-    if(lang_id == 0){ // c11
-        if(compile){
+    if (lang_id == 0)
+    { // c11
+        if (compile)
+        {
             program = c_compile_argv[0];
             program_argv = c_compile_argv;
         }
-        else {
+        else
+        {
             program = c_execution[0];
             program_argv = c_execution;
         }
     }
-    else if(lang_id == 1){  // cpp11
-        if(compile){
+    else if (lang_id == 1)
+    { // cpp11
+        if (compile)
+        {
             program = cpp_compile_argv[0];
             program_argv = cpp_compile_argv;
         }
-        else {
+        else
+        {
             program = cpp_execution[0];
             program_argv = cpp_execution;
         }
     }
-    else if(lang_id == 2){ // python3
+    else if (lang_id == 2)
+    { // python3
         program = python3_execution[0];
         program_argv = python3_execution;
     }
-
 
 #ifdef LOG
     printf("Program: %s\n", program);
@@ -97,104 +107,129 @@ int main(int argc, char **argv) {
 #endif
 
     pid = fork();
-    if (pid > 0) {
+    if (pid > 0)
+    {
         // Parent process
 
         FILE *fresult = fopen(file_result, "w");
-        if (!fresult) {
+        if (!fresult)
+        {
             printf("Failed to open result file '%s'.", file_result);
             return -1;
         }
 
-        if (time_limit) {
-          pthread_t thread_id;
-          pthread_create(&thread_id, NULL, &watcher_thread, NULL);
+        if (time_limit)
+        {
+            pthread_t thread_id;
+            pthread_create(&thread_id, NULL, &watcher_thread, NULL);
         }
 
         struct rusage usage;
         int status;
-        if (wait4(pid, &status, 0, &usage) == -1) {
+        if (wait4(pid, &status, 0, &usage) == -1)
+        {
             fprintf(fresult, "RE\nwait4() = -1\n0\n0\n");
             return 0;
         }
 
-        if (WIFEXITED(status)) {
+        if (WIFEXITED(status))
+        {
             // Not signaled - maybe exited normally
-            if (time_limit_exceeded_killed || usage.ru_utime.tv_sec > time_limit) {
+            if (time_limit_exceeded_killed || usage.ru_utime.tv_sec > time_limit)
+            {
                 fprintf(fresult, "TLE\nWEXITSTATUS() = %d\n", WEXITSTATUS(status));
             }
-            else if (usage.ru_maxrss > memory_limit) {
+            else if (usage.ru_maxrss > memory_limit)
+            {
                 fprintf(fresult, "MLE\nWEXITSTATUS() = %d\n", WEXITSTATUS(status));
             }
-            else if (WEXITSTATUS(status) != 0) {
+            else if (WEXITSTATUS(status) != 0)
+            {
                 fprintf(fresult, "RE\nWIFEXITED - WEXITSTATUS() = %d\n", WEXITSTATUS(status));
-            } 
-            else {
+            }
+            else
+            {
                 fprintf(fresult, "Exited Normally\nWIFEXITED - WEXITSTATUS() = %d\n", WEXITSTATUS(status));
             }
-        } 
-        else {
+        }
+        else
+        {
             // Signaled
             int sig = WTERMSIG(status);
-            if (time_limit_exceeded_killed || usage.ru_utime.tv_sec > time_limit || sig == SIGXCPU) {
+            if (time_limit_exceeded_killed || usage.ru_utime.tv_sec > time_limit || sig == SIGXCPU)
+            {
                 fprintf(fresult, "TLE\nWEXITSTATUS() = %d, WTERMSIG() = %d (%s)\n", WEXITSTATUS(status), sig, strsignal(sig));
-            } 
-            else if (sig == SIGXFSZ) {
+            }
+            else if (sig == SIGXFSZ)
+            {
                 fprintf(fresult, "OLE\nWEXITSTATUS() = %d, WTERMSIG() = %d (%s)\n", WEXITSTATUS(status), sig, strsignal(sig));
             }
-            else if (usage.ru_maxrss > memory_limit) {
+            else if (usage.ru_maxrss > memory_limit)
+            {
                 fprintf(fresult, "MLE\nWEXITSTATUS() = %d, WTERMSIG() = %d (%s)\n", WEXITSTATUS(status), sig, strsignal(sig));
-            } 
-            else {
+            }
+            else
+            {
                 fprintf(fresult, "RE\nWEXITSTATUS() = %d, WTERMSIG() = %d (%s)\n", WEXITSTATUS(status), sig, strsignal(sig));
             }
         }
 
 #ifdef LOG
         printf("memory_usage = %ld\n", usage.ru_maxrss);
-        if (time_limit_exceeded_killed) printf("cpu_usage = %ld\n", time_limit_to_watch);
-        else printf("cpu_usage = %ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
+        if (time_limit_exceeded_killed)
+            printf("cpu_usage = %ld\n", time_limit_to_watch);
+        else
+            printf("cpu_usage = %ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
 #endif
-        if (time_limit_exceeded_killed) fprintf(fresult, "%ld\n", time_limit_to_watch);
-        else fprintf(fresult, "%ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
+        if (time_limit_exceeded_killed)
+            fprintf(fresult, "%ld\n", time_limit_to_watch);
+        else
+            fprintf(fresult, "%ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
         fprintf(fresult, "%ld\n", usage.ru_maxrss);
 
         fclose(fresult);
-    } 
-    else {
+    }
+    else
+    {
 #ifdef LOG
         puts("Entered child process.");
 #endif
 
         // Child process
 
-        if (time_limit) {
+        if (time_limit)
+        {
             struct rlimit lim;
             lim.rlim_cur = time_limit / 1000 + 1;
-            if(time_limit % 1000 > 800)lim.rlim_cur += 1;
+            if (time_limit % 1000 > 800)
+                lim.rlim_cur += 1;
             lim.rlim_max = lim.rlim_cur + 1;
             setrlimit(RLIMIT_CPU, &lim);
         }
 
-        if (memory_limit) {
+        if (memory_limit)
+        {
             struct rlimit lim;
-            lim.rlim_cur = (memory_limit) * 1024 * 2;
+            lim.rlim_cur = (memory_limit)*1024 * 2;
             lim.rlim_max = lim.rlim_cur + 1024;
             setrlimit(RLIMIT_AS, &lim);
-            
-            if (large_stack) {
+
+            if (large_stack)
+            {
                 setrlimit(RLIMIT_STACK, &lim);
             }
         }
 
-        if (output_limit) {
+        if (output_limit)
+        {
             struct rlimit lim;
             lim.rlim_cur = output_limit;
             lim.rlim_max = output_limit;
             setrlimit(RLIMIT_FSIZE, &lim);
         }
 
-        if (process_limit) {
+        if (process_limit)
+        {
             struct rlimit lim;
             lim.rlim_cur = process_limit + 1;
             lim.rlim_max = process_limit + 1;
@@ -205,10 +240,11 @@ int main(int argc, char **argv) {
         puts("Entering target program...");
 #endif
 
-
-        if(strlen(file_stdin)){
+        if (strlen(file_stdin))
+        {
             int fd = open(file_stdin, O_RDONLY);
-            if(fd < 0){
+            if (fd < 0)
+            {
 #ifdef LOG
                 puts("Cannot open file_stdin...");
 #endif
@@ -218,9 +254,11 @@ int main(int argc, char **argv) {
             close(fd);
         }
 
-        if (strlen(file_stdout)){
-            int fd = open(file_stdout, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-            if(fd < 0){
+        if (strlen(file_stdout))
+        {
+            int fd = open(file_stdout, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            if (fd < 0)
+            {
 #ifdef LOG
                 puts("Cannot open file_stdout...");
 #endif
@@ -230,9 +268,11 @@ int main(int argc, char **argv) {
             close(fd);
         }
 
-        if (strlen(file_stderr)){
-            int fd = open(file_stderr, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-            if(fd < 0){
+        if (strlen(file_stderr))
+        {
+            int fd = open(file_stderr, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            if (fd < 0)
+            {
 #ifdef LOG
                 puts("Cannot open file_stderr...");
 #endif
@@ -241,14 +281,18 @@ int main(int argc, char **argv) {
             dup2(fd, STDERR_FILENO);
             close(fd);
         }
-        if(!compile){
+        if (!compile)
+        {
             setegid(SANDBOX_GID);
-            setuid(SANDBOX_UID);  
+            setuid(SANDBOX_UID);
         }
         // load rule
-        if(!compile){
-            if(lang_id == 0 || lang_id == 1)c_cpp_rules(program, 0);
-            if(lang_id == 2)general_rules(program);
+        if (!compile)
+        {
+            if (lang_id == 0 || lang_id == 1)
+                c_cpp_rules(program, 0);
+            if (lang_id == 2)
+                general_rules(program);
         }
 
         execvp(program, program_argv);
