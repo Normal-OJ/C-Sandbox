@@ -3,4 +3,4 @@ char *cpp_compile_argv[] = {"g++", "-DONLINE_JUDGE", "-O2", "-w", "-fmax-errors=
 
 char *c_execution[] = {"./main", 0};
 char *cpp_execution[] = {"./main", 0};
-char *python3_execution[] = {"python3", "main.py", 0};
+char *python3_execution[] = {"/usr/bin/python3", "main.py", 0};
