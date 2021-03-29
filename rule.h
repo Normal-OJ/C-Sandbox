@@ -26,7 +26,8 @@ int c_cpp_rules(char *target, bool allow_write_file)
                                 SCMP_SYS(close), SCMP_SYS(readlink),
                                 SCMP_SYS(sysinfo), SCMP_SYS(write),
                                 SCMP_SYS(writev), SCMP_SYS(lseek),
-                                SCMP_SYS(clock_gettime), SCMP_SYS(fcntl)};
+                                SCMP_SYS(clock_gettime), SCMP_SYS(fcntl),
+    				SCMP_SYS(pread64)};
 
     // add rules
     int syscalls_whitelist_length = sizeof(syscalls_whitelist) / sizeof(int);
