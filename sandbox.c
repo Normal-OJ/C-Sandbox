@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     if (argc != 11 + 1)
     {
         fprintf(stderr, "Error: need 11 arguments\n");
-        fprintf(stderr, "Usage: %s lang_id compile file_stdin file_stdout file_stderr time_limit  memory_limit large_stack output_limit process_limit file_result\n", argv[0]);
+        fprintf(stderr, "Usage: %s lang_id compile file_stdin file_stdout file_stderr time_limit memory_limit large_stack output_limit process_limit file_result\n", argv[0]);
         return 1;
     }
 
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
         if (memory_limit)
         {
             struct rlimit lim;
-            lim.rlim_cur = (memory_limit)*1024 * 2;
+            lim.rlim_cur = memory_limit * 1024 * 2;
             lim.rlim_max = lim.rlim_cur + 1024;
             setrlimit(RLIMIT_AS, &lim);
 
