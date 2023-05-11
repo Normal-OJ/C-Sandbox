@@ -1,0 +1,22 @@
+name: Build
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependeny
+        run: apt install -y libseccomp-dev libseccomp2 seccomp
+
+      - name: Build binary
+        run: make
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sandbox
+          path: sandbox
