@@ -57,7 +57,7 @@ int main(int argc, char **argv)
          output_limit = strtol(argv[9], NULL, 10),
          process_limit = strtol(argv[10], NULL, 10);
 
-    time_limit_to_watch = time_limit + 300;
+    time_limit_to_watch = time_limit;
 
     char *program = 0;
     char **program_argv = 0;
