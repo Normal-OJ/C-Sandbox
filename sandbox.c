@@ -135,7 +135,7 @@ int main(int argc, char **argv)
         if (WIFEXITED(status))
         {
             // Not signaled - maybe exited normally
-            if (time_limit_exceeded_killed || usage.ru_utime.tv_sec > time_limit)
+            if (time_limit_exceeded_killed || (usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000) > time_limit)
             {
                 fprintf(fresult, "TLE\nWEXITSTATUS() = %d\n", WEXITSTATUS(status));
             }
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
         {
             // Signaled
             int sig = WTERMSIG(status);
-            if (time_limit_exceeded_killed || usage.ru_utime.tv_sec > time_limit || sig == SIGXCPU)
+            if (time_limit_exceeded_killed || (usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000) > time_limit || sig == SIGXCPU)
             {
                 fprintf(fresult, "TLE\nWEXITSTATUS() = %d, WTERMSIG() = %d (%s)\n", WEXITSTATUS(status), sig, strsignal(sig));
             }
