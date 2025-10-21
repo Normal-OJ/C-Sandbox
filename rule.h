@@ -1,12 +1,43 @@
+#include <stddef.h>
+#include <stdbool.h>
 #include <seccomp.h>
 #include <fcntl.h>
-#include <stdbool.h>
+#include <sys/prctl.h>
+#include <sys/ioctl.h>
+#include <linux/filter.h>
+
 
 #define LOAD_SECCOMP_FAILED 1
+
+int install_seccomp() {
+    struct sock_filter filter[] = {
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, offsetof(struct seccomp_data, nr)),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_ioctl, 1, 0),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
+
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, offsetof(struct seccomp_data, args[1])),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, TCGETS, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
+
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS),
+    };
+
+    struct sock_fprog prog = {
+        .len = (unsigned short)(sizeof(filter)/sizeof(filter[0])),
+        .filter = filter,
+    };
+
+    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) return -1;
+    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog)) return -1;
+
+    return 0;
+}
+
 
 int c_cpp_rules(char *target, bool allow_write_file)
 {
     scmp_filter_ctx ctx;
+    install_seccomp();
     ctx = seccomp_init(SCMP_ACT_KILL);
     if (!ctx)
     {
@@ -30,7 +61,7 @@ int c_cpp_rules(char *target, bool allow_write_file)
                                 SCMP_SYS(pread64), SCMP_SYS(faccessat),
                                 SCMP_SYS(newfstatat), SCMP_SYS(set_tid_address),
                                 SCMP_SYS(set_robust_list), SCMP_SYS(rseq),
-                                SCMP_SYS(prlimit64)};
+                                SCMP_SYS(prlimit64), SCMP_SYS(getrandom), SCMP_SYS(futex), SCMP_SYS(ioctl)};
 
     // add rules
     int syscalls_whitelist_length = sizeof(syscalls_whitelist) / sizeof(int);
