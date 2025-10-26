@@ -139,6 +139,7 @@ int main(int argc, char **argv)
 	    time_limit_exceeded_killed = g_time_limit_exceeded_killed;
             pthread_mutex_unlock(&g_mtx);
             pthread_cancel(g_thread_id);
+            pthread_join(g_thread_id, NULL);
         }
 
         if (WIFEXITED(status))
