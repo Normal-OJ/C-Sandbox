@@ -299,8 +299,8 @@ int main(int argc, char **argv)
         }
         if (!compile)
         {
-            if(setuid(SANDBOX_UID) == -1) return 1;
-            if(setegid(SANDBOX_GID) == -1) return 1;
+            if (setegid(SANDBOX_GID) == -1) return 1;
+            if (setuid(SANDBOX_UID) == -1) return 1;
         }
         // load rule
         if (!compile)
