@@ -20,7 +20,7 @@ const pid_t SANDBOX_GID = 1450;
 
 pid_t pid;
 long time_limit_to_watch;
-bool time_limit_exceeded_killed;
+bool time_limit_exceeded_killed = false;
 
 void *watcher_thread(void *arg)
 {
@@ -118,10 +118,15 @@ int main(int argc, char **argv)
             return -1;
         }
 
+
+        pthread_t thread_id;
+        bool thread_created = false;
         if (time_limit)
         {
-            pthread_t thread_id;
-            pthread_create(&thread_id, NULL, &watcher_thread, NULL);
+            if (pthread_create(&thread_id, NULL, &watcher_thread, NULL) == 0)
+            {
+                thread_created = true;
+            }
         }
 
         struct rusage usage;
@@ -129,7 +134,18 @@ int main(int argc, char **argv)
         if (wait4(pid, &status, 0, &usage) == -1)
         {
             fprintf(fresult, "RE\nwait4() = -1\n0\n0\n");
+            if (thread_created)
+            {
+                pthread_cancel(thread_id);
+                pthread_join(thread_id, NULL);
+            }
             return 0;
+        }
+
+        if (thread_created)
+        {
+            pthread_cancel(thread_id);
+            pthread_join(thread_id, NULL);
         }
 
         if (WIFEXITED(status))
@@ -283,8 +299,8 @@ int main(int argc, char **argv)
         }
         if (!compile)
         {
-            setegid(SANDBOX_GID);
-            setuid(SANDBOX_UID);
+            if(setuid(SANDBOX_UID) == -1) return 1;
+            if(setegid(SANDBOX_GID) == -1) return 1;
         }
         // load rule
         if (!compile)
@@ -296,6 +312,8 @@ int main(int argc, char **argv)
         }
 
         execvp(program, program_argv);
+        // when failed
+        return 1;
     }
     return 0;
 }
