@@ -18,15 +18,15 @@
 const pid_t SANDBOX_UID = 1450;
 const pid_t SANDBOX_GID = 1450;
 
-pid_t pid;
-long time_limit_to_watch;
-bool time_limit_exceeded_killed;
+static pid_t g_pid;
+static long g_time_limit_to_watch;
+static bool g_time_limit_exceeded_killed;
 
 void *watcher_thread(void *arg)
 {
-    usleep(time_limit_to_watch * 1000);
-    time_limit_exceeded_killed = true;
-    kill(pid, SIGKILL);
+    usleep(g_time_limit_to_watch * 1000);
+    g_time_limit_exceeded_killed = true;
+    kill(g_pid, SIGKILL);
     return arg; // Avoid 'parameter set but not used' warning
 }
 
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
          output_limit = strtol(argv[9], NULL, 10),
          process_limit = strtol(argv[10], NULL, 10);
 
-    time_limit_to_watch = time_limit + 300;
+    g_time_limit_to_watch = time_limit + 300;
 
     char *program = 0;
     char **program_argv = 0;
@@ -106,8 +106,8 @@ int main(int argc, char **argv)
     printf("Result file: %s\n", file_result);
 #endif
 
-    pid = fork();
-    if (pid > 0)
+    g_pid = fork();
+    if (g_pid > 0)
     {
         // Parent process
 
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 
         struct rusage usage;
         int status;
-        if (wait4(pid, &status, 0, &usage) == -1)
+        if (wait4(g_pid, &status, 0, &usage) == -1)
         {
             fprintf(fresult, "RE\nwait4() = -1\n0\n0\n");
             return 0;
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
         if (WIFEXITED(status))
         {
             // Not signaled - maybe exited normally
-            if (time_limit_exceeded_killed || (usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000) > time_limit)
+            if (g_time_limit_exceeded_killed || (usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000) > time_limit)
             {
                 fprintf(fresult, "TLE\nWEXITSTATUS() = %d\n", WEXITSTATUS(status));
             }
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
         {
             // Signaled
             int sig = WTERMSIG(status);
-            if (time_limit_exceeded_killed || (usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000) > time_limit || sig == SIGXCPU)
+            if (g_time_limit_exceeded_killed || (usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000) > time_limit || sig == SIGXCPU)
             {
                 fprintf(fresult, "TLE\nWEXITSTATUS() = %d, WTERMSIG() = %d (%s)\n", WEXITSTATUS(status), sig, strsignal(sig));
             }
@@ -181,8 +181,8 @@ int main(int argc, char **argv)
         else
             printf("cpu_usage = %ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
 #endif
-        if (time_limit_exceeded_killed)
-            fprintf(fresult, "%ld\n", time_limit_to_watch);
+        if (g_time_limit_exceeded_killed)
+            fprintf(fresult, "%ld\n", g_time_limit_to_watch);
         else
             fprintf(fresult, "%ld\n", (usage.ru_utime.tv_sec * 1000000 + usage.ru_utime.tv_usec) / 1000);
         fprintf(fresult, "%ld\n", usage.ru_maxrss);
