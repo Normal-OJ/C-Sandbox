@@ -130,8 +130,8 @@ int main(int argc, char **argv)
             fprintf(fresult, "RE\nwait4() = -1\n0\n0\n");
             return 0;
         }
-	bool time_limit_exceeded_killed = false;
-	if (time_limit) {
+        bool time_limit_exceeded_killed = false;
+        if (time_limit) {
             pthread_cancel(g_thread_id);
             pthread_join(g_thread_id, NULL);
             time_limit_exceeded_killed = g_time_limit_exceeded_killed;
