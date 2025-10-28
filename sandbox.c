@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <pthread.h>
 
 #include "lang.h"
 #include "rule.h"
@@ -21,13 +20,14 @@ const pid_t SANDBOX_GID = 1450;
 
 static pid_t g_pid;
 static long g_time_limit_to_watch;
-static bool g_time_limit_exceeded_killed;
+static _Atomic char g_time_limit_exceeded_killed;
 static pthread_t g_thread_id;
+pthread_mutex_t g_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 void *watcher_thread(void *arg)
 {
     usleep(g_time_limit_to_watch * 1000);
-    g_time_limit_exceeded_killed = true;
+    g_time_limit_exceeded_killed = 1;
     kill(g_pid, SIGKILL);
     return arg; // Avoid 'parameter set but not used' warning
 }
@@ -108,6 +108,7 @@ int main(int argc, char **argv)
     printf("Result file: %s\n", file_result);
 #endif
 
+    pthread_mutex_lock(&g_mtx);
     g_pid = fork();
     if (g_pid > 0)
     {
@@ -120,8 +121,15 @@ int main(int argc, char **argv)
             return -1;
         }
 
-        if (time_limit)
-            pthread_create(&g_thread_id, NULL, &watcher_thread, NULL);
+        if (time_limit) {
+            if (pthread_create(&g_thread_id, NULL, &watcher_thread, NULL) != 0) {
+                kill(g_pid, SIGKILL);
+                fprintf(fresult, "RE\nFailed to create watcher thread\n0\n0\n");
+                fclose(fresult);
+                return 1;
+            }
+        }
+        pthread_mutex_unlock(&g_mtx);
 
         struct rusage usage;
         int status;
@@ -130,7 +138,7 @@ int main(int argc, char **argv)
             fprintf(fresult, "RE\nwait4() = -1\n0\n0\n");
             return 0;
         }
-        bool time_limit_exceeded_killed = false;
+        bool time_limit_exceeded_killed = 0;
         if (time_limit) {
             pthread_cancel(g_thread_id);
             pthread_join(g_thread_id, NULL);
@@ -299,6 +307,7 @@ int main(int argc, char **argv)
             if (lang_id == 2)
                 general_rules(program);
         }
+        pthread_mutex_lock(&g_mtx);
 
         execvp(program, program_argv);
     }
