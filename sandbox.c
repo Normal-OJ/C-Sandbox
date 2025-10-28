@@ -22,15 +22,12 @@ const pid_t SANDBOX_GID = 1450;
 static pid_t g_pid;
 static long g_time_limit_to_watch;
 static bool g_time_limit_exceeded_killed;
-static pthread_mutex_t g_mtx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t g_thread_id;
 
 void *watcher_thread(void *arg)
 {
     usleep(g_time_limit_to_watch * 1000);
-    pthread_mutex_lock(&g_mtx);
     g_time_limit_exceeded_killed = true;
-    pthread_mutex_unlock(&g_mtx);
     kill(g_pid, SIGKILL);
     return arg; // Avoid 'parameter set but not used' warning
 }
@@ -135,11 +132,9 @@ int main(int argc, char **argv)
         }
 	bool time_limit_exceeded_killed = false;
 	if (time_limit) {
-            pthread_mutex_lock(&g_mtx);
-	    time_limit_exceeded_killed = g_time_limit_exceeded_killed;
-            pthread_mutex_unlock(&g_mtx);
             pthread_cancel(g_thread_id);
             pthread_join(g_thread_id, NULL);
+            time_limit_exceeded_killed = g_time_limit_exceeded_killed;
         }
 
         if (WIFEXITED(status))
