@@ -310,6 +310,7 @@ int main(int argc, char **argv)
         pthread_mutex_lock(&g_mtx);
 
         execvp(program, program_argv);
+        return -1;
     }
     return 0;
 }
